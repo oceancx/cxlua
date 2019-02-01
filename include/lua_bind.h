@@ -171,7 +171,7 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 	lua_pushargs(L, args...);
 	if (lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0) != LUA_OK)
 	{
-		const char* err = lua_tostring(L, -1);
+        const char* errmsg = lua_tostring(L, -1); printf("%s\n",errmsg);
 		lua_settop(L, top);
 		return {};
 	}
