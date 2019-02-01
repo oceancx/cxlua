@@ -3,9 +3,6 @@
 #include <iostream>
 using namespace ezio;
 
-static int key_mt_tcp_connection = -1;
-static int key_mt_buffer = -2;
-
 static const char* skey_mt_tcp_connection = "key_mt_tcp_connection";
 static const char* skey_mt_buffer = "key_mt_buffer";
 

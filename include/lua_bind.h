@@ -153,7 +153,7 @@ int cfunction_t(lua_State*L)
 }
 
 template<typename FuncType>
-void lua_register_c_function(lua_State* L, void* func, const char* name)
+void lua_register_c_function(lua_State* L, FuncType* func, const char* name)
 {
 	FuncType**ud = (FuncType**)lua_newuserdata(L, sizeof(FuncType*));
 	(*ud) = (FuncType*)func;
@@ -171,7 +171,7 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 	lua_pushargs(L, args...);
 	if (lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0) != LUA_OK)
 	{
-		std::cout << std::string(lua_tostring(L, -1)) << std::endl;
+		const char* err = lua_tostring(L, -1);
 		lua_settop(L, top);
 		return {};
 	}

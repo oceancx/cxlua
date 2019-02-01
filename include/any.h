@@ -52,7 +52,8 @@ public:
 	}
 
 	any& operator=(const any& rhs) {
-		ptr = std::move(any(rhs).ptr);
+        any rhs_ = any(rhs);
+		ptr = std::move(rhs_.ptr);
 		return (*this);
 	}
 
