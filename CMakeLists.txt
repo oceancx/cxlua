@@ -41,4 +41,5 @@ target_include_directories(cxlua
 
 target_link_libraries(cxlua PUBLIC EZIO::EZIO LuaCJson::LuaCJson)
 
+include(cmake/HelperMacroFunction.cmake)
 export_library_macro(cxlua CXLua CXLua:: lib/cmake/cxlua)
