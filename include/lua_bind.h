@@ -109,6 +109,10 @@ static inline void lua_pushanyvalue(lua_State* L, any a)
 	{
 		lua_pushstring(L, any_cast<const char*>(a));
 	}
+	else if (a.type() == typeid(std::string)) 
+	{
+		lua_pushstring(L, any_cast<std::string>(a).c_str());
+	}
 	else
 	{
 		lua_pushboolean(L, true);
