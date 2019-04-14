@@ -168,6 +168,7 @@ void lua_register_c_function(lua_State* L, FuncType* func, const char* name)
 #define lua_register_function(L,fn) lua_register_c_function<decltype(fn)>(L,fn,#fn)
 
 template <typename...Ts>
+
 std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 {
 	int top = lua_gettop(L);
@@ -175,7 +176,9 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 	lua_pushargs(L, args...);
 	if (lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0) != LUA_OK)
 	{
-        const char* errmsg = lua_tostring(L, -1); printf("%s\n",errmsg);
+		luaL_traceback(L, L, lua_tostring(L, -1), 0);
+		const char* errmsg = lua_tostring(L, -1);
+		printf("%s\npcall error:\t%s\n", errmsg, func);
 		lua_settop(L, top);
 		return {};
 	}
