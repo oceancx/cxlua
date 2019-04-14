@@ -178,7 +178,7 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 	{
 		luaL_traceback(L, L, lua_tostring(L, -1), 0);
 		const char* errmsg = lua_tostring(L, -1);
-		printf("%s\npcall error:\t%s\n", errmsg, func);
+		printf("%s\npcall error:\t[func]%s\n", errmsg, func);
 		lua_settop(L, top);
 		return {};
 	}
