@@ -30,3 +30,5 @@ private:
 void lua_push_net_thread_queue(lua_State*L,NetThreadQueue* q);
 
 void luaopen_net_thread_queue(lua_State* L);
+
+NetThreadQueue* lua_check_net_thread_queue(lua_State* L,int index);

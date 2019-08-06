@@ -1,6 +1,9 @@
 #include "lua_net.h"
 #include "ezio/tcp_connection.h"
 #include <iostream>
+
+
+
 using namespace ezio;
 
 static const char* skey_mt_tcp_connection = "key_mt_tcp_connection";
@@ -14,6 +17,8 @@ TCPConnection* lua_check_tcpconnection(lua_State* L,int index)
 	LuaTcpConnection* conn = (LuaTcpConnection*)lua_touserdata(L, index);
 	return *conn;
 }
+
+
 int tcp_connection_to_host_port(lua_State* L)
 {
 	TCPConnection* conn = (TCPConnection*)lua_check_tcpconnection(L, 1);
@@ -93,6 +98,52 @@ int buffer_consume(lua_State* L)
 	return 0;
 }
 
+
+int buffer_prependint(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	int n = (int)lua_tointeger(L, 2);
+	buffer->Prepend(n);
+	
+	return 0;
+}
+
+int buffer_prependstring(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	size_t len = 0;
+	const char* data = lua_tolstring(L, 2, &len);
+	buffer->Prepend(data, len);
+	return 0;
+}
+
+
+int buffer_writestring(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	size_t len = 0;
+	const char* data = lua_tolstring(L, 2, &len);
+	buffer->Write(data, len);
+	return 0;
+}
+
+int buffer_writeint(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	int n = (int)lua_tointeger(L, 2);
+	buffer->Write(n);
+	return 0;
+}
+
+int buffer_writefloat(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	float num = (float)lua_tonumber(L, 2);
+	buffer->Write(num);
+	return 0;
+}
+
+
 int buffer_readstring(lua_State* L)
 {
 	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
@@ -100,6 +151,15 @@ int buffer_readstring(lua_State* L)
 	lua_pushstring(L, (buffer->ReadAsString(len)).c_str());
 	return 1;
 }
+
+int buffer_readallstring(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	std::string str(buffer->ReadAllAsString());
+	lua_pushstring(L, str.c_str());
+	return 1;
+}
+
 
 int buffer_peekstring(lua_State* L)
 {
@@ -120,7 +180,7 @@ int buffer_readfloat(lua_State* L)
 int buffer_peekfloat(lua_State* L)
 {
 	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
-	int v = buffer->PeekAsFloat();
+	float v = buffer->PeekAsFloat();
 	lua_pushnumber(L, v);
 	return 1;
 }
@@ -156,12 +216,20 @@ luaL_Reg mt_buffer_reg[] = {
 	{ "readable_size",buffer_readablesize },
 	{ "Preview",buffer_preview },
 	{ "Consume",buffer_consume },
+	{ "PrependInt",buffer_prependint},
+	{ "PrependString",buffer_prependstring },
+	{ "WriteString",buffer_writestring },
+	{ "WriteFloat",buffer_writefloat },
+	{ "WriteInt",buffer_writeint },
 	{ "ReadAsString",buffer_readstring },
+	{ "ReadAllAsString",buffer_readallstring },
+	
 	{ "ReadAsFloat",buffer_readfloat },
-	{ "ReadAsInt32",buffer_readint },
-	{ "PeekAsInt32",buffer_peekint},
+	{ "ReadAsInt",buffer_readint },
+	{ "PeekAsInt",buffer_peekint},
 	{ "PeekAsFloat",buffer_peekfloat },
 	{ "PeekAsString",buffer_peekstring },
+
 	//{ "__gc",buffer_gc },
 	{ "Destroy",buffer_gc },
 	{ NULL, NULL }
@@ -174,8 +242,23 @@ void lua_push_ezio_buffer(lua_State*L, Buffer& buf)
 	luaL_setmetatable(L, skey_mt_buffer);
 }
 
+int ezio_buffer_create(lua_State*L)
+{
+	LuaEzioBuffer* ptr = (LuaEzioBuffer*)lua_newuserdata(L, sizeof(LuaEzioBuffer));
+	*ptr = new Buffer();
+	luaL_setmetatable(L, skey_mt_buffer);
+	return 1;
+}
 
 
+int ezio_buffer_destroy(lua_State*L)
+{
+	Buffer* ptr = lua_check_buffer(L, 1);
+	delete ptr;
+	return 0;
+}
+
+#define register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))
 void luaopen_netlib(lua_State* L)
 {
 	if (luaL_newmetatable(L, skey_mt_tcp_connection)) {
@@ -193,4 +276,7 @@ void luaopen_netlib(lua_State* L)
 	else {
 		std::cout << "associate mt_buffer error!" << std::endl;
 	}
+
+	register_luac_function(L, ezio_buffer_create);
+	register_luac_function(L, ezio_buffer_destroy);
 }

@@ -97,7 +97,7 @@ int net_thread_queue_front_as_buffer(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
 	int q = (int)lua_tointeger(L, 2);
-	std::string& msg = ptr->Front(q);
+	const std::string& msg = ptr->Front(q);
 	ezio::Buffer* buf = new ezio::Buffer();
 	buf->Write(msg.data(), msg.size());
 	lua_push_ezio_buffer(L, *buf);
