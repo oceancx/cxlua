@@ -1,6 +1,8 @@
 #include "net_thread_queue.h"
 #include <assert.h>
 #include <iostream>
+#include "ezio/buffer.h"
+#include "lua_net.h"
 void NetThreadQueue::PushBack(int q, std::string msg)
 {
 	assert(checkq(q));
@@ -91,6 +93,18 @@ int net_thread_queue_front(lua_State* L)
 	return 1;
 }
 
+int net_thread_queue_front_as_buffer(lua_State* L)
+{
+	auto* ptr = lua_check_net_thread_queue(L, 1);
+	int q = (int)lua_tointeger(L, 2);
+	std::string& msg = ptr->Front(q);
+	ezio::Buffer* buf = new ezio::Buffer();
+	buf->Write(msg.data(), msg.size());
+	lua_push_ezio_buffer(L, *buf);
+	return 1;
+}
+
+
 int net_thread_queue_size(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
@@ -119,6 +133,7 @@ int net_thread_queue_clear(lua_State* L)
 luaL_Reg mt_net_thread_queue[] = {
 	{ "push_back",net_thread_queue_push_back },
 	{ "pop_front",net_thread_queue_pop_front },
+	{ "front_as_buffer",net_thread_queue_front_as_buffer},
 	{ "front",net_thread_queue_front },
 	{ "size",net_thread_queue_size },
 	{ "empty",net_thread_queue_empty },

@@ -97,11 +97,17 @@ int buffer_readstring(lua_State* L)
 {
 	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
 	int len = (int)lua_tointeger(L, 2);
-	lua_pushlstring(L,buffer->Peek(),len);
-	buffer->Consume(len);
+	lua_pushstring(L, (buffer->ReadAsString(len)).c_str());
 	return 1;
 }
 
+int buffer_peekstring(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	int len = (int)lua_tointeger(L, 2);
+	lua_pushlstring(L, buffer->Peek(), len);
+	return 1;
+}
 
 int buffer_readfloat(lua_State* L)
 {
@@ -111,6 +117,15 @@ int buffer_readfloat(lua_State* L)
 	return 1;
 }
 
+int buffer_peekfloat(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	int v = buffer->PeekAsFloat();
+	lua_pushnumber(L, v);
+	return 1;
+}
+
+
 int buffer_readint(lua_State* L)
 {
 	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
@@ -118,6 +133,15 @@ int buffer_readint(lua_State* L)
 	lua_pushinteger(L, v);
 	return 1;
 }
+
+int buffer_peekint(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	int v = buffer->PeekAsInt32();
+	lua_pushinteger(L, v);
+	return 1;
+}
+
 
 int buffer_gc(lua_State* L)
 {
@@ -129,13 +153,17 @@ int buffer_gc(lua_State* L)
 }
 
 luaL_Reg mt_buffer_reg[] = {
-	{ "readablesize",buffer_readablesize },
-	{ "preview",buffer_preview },
-	{ "consume",buffer_consume },
-	{ "readstring",buffer_readstring },
-	{ "readfloat",buffer_readfloat },
-	{ "readint",buffer_readint },
+	{ "readable_size",buffer_readablesize },
+	{ "Preview",buffer_preview },
+	{ "Consume",buffer_consume },
+	{ "ReadAsString",buffer_readstring },
+	{ "ReadAsFloat",buffer_readfloat },
+	{ "ReadAsInt32",buffer_readint },
+	{ "PeekAsInt32",buffer_peekint},
+	{ "PeekAsFloat",buffer_peekfloat },
+	{ "PeekAsString",buffer_peekstring },
 	//{ "__gc",buffer_gc },
+	{ "Destroy",buffer_gc },
 	{ NULL, NULL }
 };
 
@@ -145,6 +173,8 @@ void lua_push_ezio_buffer(lua_State*L, Buffer& buf)
 	*ptr = &buf;
 	luaL_setmetatable(L, skey_mt_buffer);
 }
+
+
 
 void luaopen_netlib(lua_State* L)
 {
