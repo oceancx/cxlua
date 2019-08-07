@@ -1,21 +1,23 @@
 #include "net_thread_queue.h"
 #include <assert.h>
 #include <iostream>
-#include "ezio/buffer.h"
+
 #include "lua_net.h"
-void NetThreadQueue::PushBack(int q, std::string msg)
+void NetThreadQueue::PushBack(int q,const char* data, size_t len)
 {
 	assert(checkq(q));
 	m_Locks[q].lock();
-	m_Queues[q].push_back(msg);
+	m_Queues[q].emplace_back(len);
+	ezio::Buffer& it = m_Queues[q].back();
+	it.Write(data, len);
 	m_Locks[q].unlock();
 }
 
-std::string NetThreadQueue::Front(int q)
+ezio::Buffer& NetThreadQueue::Front(int q)
 {
 	assert(checkq(q));
 	m_Locks[q].lock();
-	auto f = m_Queues[q].front();
+	ezio::Buffer& f = m_Queues[q].front();
 	m_Locks[q].unlock();
 	return f;
 }
@@ -70,8 +72,9 @@ int net_thread_queue_push_back(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
 	int q = (int)lua_tointeger(L, 2);
-	const char* msg = lua_tostring(L, 3);
-	ptr->PushBack(q, msg);
+	ezio::Buffer* buffer = (ezio::Buffer*)lua_check_buffer(L, 3);
+	size_t len = (size_t)lua_tointeger(L, 4);
+	ptr->PushBack(q, buffer->Peek(), len);
 	return 0;
 }
 
@@ -88,19 +91,18 @@ int net_thread_queue_front(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
 	int q = (int)lua_tointeger(L, 2);
-	auto msg = ptr->Front(q);
-	lua_pushstring(L, msg.c_str());
+	auto& buf = ptr->Front(q);
+	lua_push_ezio_buffer(L, buf);
 	return 1;
 }
 
-int net_thread_queue_front_as_buffer(lua_State* L)
+int net_thread_queue_front_as_string(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
 	int q = (int)lua_tointeger(L, 2);
-	const std::string& msg = ptr->Front(q);
-	ezio::Buffer* buf = new ezio::Buffer();
-	buf->Write(msg.data(), msg.size());
-	lua_push_ezio_buffer(L, *buf);
+	auto& buf = ptr->Front(q);
+	std::string s(buf.Peek(), buf.readable_size());
+	lua_pushstring(L, s.c_str());
 	return 1;
 }
 
@@ -133,7 +135,7 @@ int net_thread_queue_clear(lua_State* L)
 luaL_Reg mt_net_thread_queue[] = {
 	{ "push_back",net_thread_queue_push_back },
 	{ "pop_front",net_thread_queue_pop_front },
-	{ "front_as_buffer",net_thread_queue_front_as_buffer},
+	{ "front_as_string",net_thread_queue_front_as_string},
 	{ "front",net_thread_queue_front },
 	{ "size",net_thread_queue_size },
 	{ "empty",net_thread_queue_empty },

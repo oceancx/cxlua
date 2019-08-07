@@ -193,4 +193,5 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 
 #define script_system_register_function(L, fn) lua_register_function(L, fn)
 #define script_system_register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))
+#define script_system_register_luac_function_with_name(L, name, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, name))
 #define script_system_call_function(L, ...) call_lua_function(L, __VA_ARGS__)

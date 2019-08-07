@@ -66,7 +66,7 @@ void lua_push_tcp_connection(lua_State*L, const TCPConnectionPtr& conn)
 	luaL_setmetatable(L, skey_mt_tcp_connection);
 }
 
-Buffer* lua_check_buffer(lua_State*L , int index)
+Buffer* lua_check_buffer(lua_State*L, int index)
 {
 	LuaEzioBuffer* buffer = (LuaEzioBuffer*)lua_touserdata(L, index);
 	return *buffer;
