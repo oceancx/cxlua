@@ -9,42 +9,48 @@ using namespace ezio;
 static const char* skey_mt_tcp_connection = "key_mt_tcp_connection";
 static const char* skey_mt_buffer = "key_mt_buffer";
 
-using LuaTcpConnection = TCPConnection*;
+
 using LuaEzioBuffer = Buffer* ;
+
+void lua_push_tcp_connection(lua_State*L, const TCPConnectionPtr& conn)
+{
+	TCPConnection**  ptr = (TCPConnection**)lua_newuserdata(L, sizeof(TCPConnection*));
+	*ptr = conn.get();
+	luaL_setmetatable(L, skey_mt_tcp_connection);
+}
 
 TCPConnection* lua_check_tcpconnection(lua_State* L,int index)
 {
-	LuaTcpConnection* conn = (LuaTcpConnection*)lua_touserdata(L, index);
-	return *conn;
+	TCPConnection**  ptr = (TCPConnection**)lua_touserdata(L, index);
+	return *ptr;
 }
 
 
 int tcp_connection_to_host_port(lua_State* L)
 {
-	TCPConnection* conn = (TCPConnection*)lua_check_tcpconnection(L, 1);
+	TCPConnection* conn = lua_check_tcpconnection(L, 1);
 	lua_pushstring(L, conn->peer_addr().ToHostPort().c_str());
 	return 1;
 }
 
 int tcp_connection_connected(lua_State* L)
 {
-	TCPConnection* conn = (TCPConnection*)lua_check_tcpconnection(L, 1);
+	TCPConnection* conn = lua_check_tcpconnection(L, 1);
 	lua_pushboolean(L, conn->connected());
 	return 1;
 }
-
-int tcp_connection_cleanup(lua_State* L)
-{
-	LuaTcpConnection* conn = (LuaTcpConnection*)lua_touserdata(L, 1);
-	free(conn);
-	conn = nullptr;
-	printf("TCPConnection cleanup\n");
-	return 0;
-}
+//
+//int tcp_connection_cleanup(lua_State* L)
+//{
+////	TCPConnectionPtr* conn = lua_check_tcpconnection(L, 1);
+//	
+//	//printf("TCPConnection cleanup %d\n",(int)L);
+//	return 0;
+//}
 
 int tcp_connection_send(lua_State* L)
 {
-	TCPConnection* conn = (TCPConnection*)lua_check_tcpconnection(L, 1);
+	TCPConnection* conn = lua_check_tcpconnection(L, 1);
 	size_t len = 0;
 	const char* data = lua_tolstring(L, 2, &len);
 	conn->Send(kbase::StringView(data, len));
@@ -59,12 +65,7 @@ luaL_Reg mt_tcp_connection_reg[] = {
 	{ NULL, NULL }
 };
 
-void lua_push_tcp_connection(lua_State*L, const TCPConnectionPtr& conn)
-{
-	LuaTcpConnection* ptr = (LuaTcpConnection*)lua_newuserdata(L, sizeof(LuaTcpConnection));
-	*ptr = conn.get();
-	luaL_setmetatable(L, skey_mt_tcp_connection);
-}
+
 
 Buffer* lua_check_buffer(lua_State*L, int index)
 {
