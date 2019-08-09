@@ -66,15 +66,16 @@ static inline any lua_getanyvalue(lua_State*L, int i)
 		return 0;
 	case LUA_TNUMBER:
 	{
-		double num = lua_tonumber(L, i);
-		float fnum = (float)num;
-		int inum = static_cast<int>(num);
-		if (num - inum >= 0.000001f)
+		lua_Number num = lua_tonumber(L, i);
+		lua_Number inum = std::floor(num);
+		if (num - inum != 0)
 		{
-			return fnum;
+			return (lua_Number)num;
 		}
-		else
-			return inum;
+		else {
+			return (lua_Integer)inum;
+		}
+			
 	}
 	case LUA_TSTRING:
 		return lua_tostring(L, i);
@@ -97,7 +98,7 @@ static inline void lua_pushanyvalue(lua_State* L, any a)
 	{
 		lua_pushinteger(L, any_cast<int>(a));
 	}
-	else if (a.type() == typeid(double) )
+	else if (a.type() == typeid(double))
 	{
 		lua_pushnumber(L, any_cast<double>(a));
 	}
@@ -109,9 +110,16 @@ static inline void lua_pushanyvalue(lua_State* L, any a)
 	{
 		lua_pushstring(L, any_cast<const char*>(a));
 	}
-	else if (a.type() == typeid(std::string)) 
+	else if (a.type() == typeid(std::string))
 	{
 		lua_pushstring(L, any_cast<std::string>(a).c_str());
+	}
+	else if (a.type() == typeid(uint64_t)) {
+		lua_pushinteger(L, any_cast<uint64_t>(a));
+	}
+	else if (a.type() == typeid(int64_t))
+	{
+		lua_pushinteger(L, any_cast<int64_t>(a));
 	}
 	else
 	{
@@ -168,12 +176,13 @@ void lua_register_c_function(lua_State* L, FuncType* func, const char* name)
 #define lua_register_function(L,fn) lua_register_c_function<decltype(fn)>(L,fn,#fn)
 
 template <typename...Ts>
-
 std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 {
 	int top = lua_gettop(L);
 	lua_getglobal(L, func);
-	lua_pushargs(L, args...);
+
+	if(sizeof...(Ts) != 0)
+		lua_pushargs(L, args...);
 	if (lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0) != LUA_OK)
 	{
 		luaL_traceback(L, L, lua_tostring(L, -1), 0);
@@ -190,6 +199,7 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 	}
 	return rets;
 }
+
 
 #define script_system_register_function(L, fn) lua_register_function(L, fn)
 #define script_system_register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))

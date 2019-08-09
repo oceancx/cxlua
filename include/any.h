@@ -119,8 +119,6 @@ private:
 
 template<class Type>
 Type any_cast(any& val) {
-	if (val.ptr->type() != typeid(Type))
-		throw bad_any_cast();
 	return static_cast<any::concrete<Type>*>(val.ptr.get())->value;
 }
 
