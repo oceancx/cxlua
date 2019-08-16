@@ -21,6 +21,7 @@ add_library(cxlua
     ${SOURCES_HEADER_RPI}
     src/lua_net.cpp
     src/net_thread_queue.cpp
+  	src/cxlua.cpp
 )
 
 if(MSVC)
