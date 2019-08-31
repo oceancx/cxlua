@@ -8,6 +8,9 @@ extern "C" {
 #include <functional>
 #include <vector>
 
+
+bool check_lua_error(lua_State* L, int res, const char* func);
+
 template <typename Ret, typename... Args>
 Ret callfunc(std::function<Ret(Args...)> func, std::vector<any> anyargs);
 
@@ -183,14 +186,9 @@ std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
 
 	if(sizeof...(Ts) != 0)
 		lua_pushargs(L, args...);
-	if (lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0) != LUA_OK)
-	{
-		luaL_traceback(L, L, lua_tostring(L, -1), 0);
-		const char* errmsg = lua_tostring(L, -1);
-		printf("%s\npcall error:\t[func]%s\n", errmsg, func);
-		lua_settop(L, top);
-		return {};
-	}
+	int res = lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0);
+	check_lua_error(L, res, func);
+
 	int nret = lua_gettop(L) - top;
 	std::vector<any> rets;
 	for (int i = 1; i <= nret; i++)
