@@ -7,7 +7,8 @@ extern "C" {
 }
 #include <functional>
 #include <vector>
-
+#include <cmath>
+#include <string>
 
 bool check_lua_error(lua_State* L, int res, const char* func);
 
