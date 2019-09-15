@@ -10,7 +10,7 @@ extern "C" {
 #include <cmath>
 #include <string>
 
-bool check_lua_error(lua_State* L, int res, const char* func);
+bool check_lua_error(lua_State* L, int res, const char* func="");
 
 template <typename Ret, typename... Args>
 Ret callfunc(std::function<Ret(Args...)> func, std::vector<any> anyargs);
