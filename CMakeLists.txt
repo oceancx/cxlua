@@ -7,6 +7,9 @@ endif()
 
 find_package(LuaCJson)
 find_package(EZIO)
+find_package(NESupport)
+find_package(Nlohmann)
+find_package(glm)
 
 file(GLOB_RECURSE  SOURCES_CPP "src/*.cpp")
 file(GLOB_RECURSE  SOURCES_HEADER_RPI "src/*.h" )
@@ -21,7 +24,12 @@ add_library(cxlua
     ${SOURCES_HEADER_RPI}
     src/lua_net.cpp
     src/net_thread_queue.cpp
-  	src/cxlua.cpp
+    src/cxlua.cpp
+    src/protocol.cpp
+    src/utils.cpp
+    src/cxmath.cpp
+    src/cxrandom.cpp
+    src/tsv.cpp
 )
 
 if(MSVC)
@@ -39,8 +47,18 @@ target_include_directories(cxlua
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+set_target_properties(cxlua PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "src/pch/precompile.h")
+cotire(cxlua)
+target_compile_features(cxlua PUBLIC cxx_std_11)
 
-target_link_libraries(cxlua PUBLIC EZIO::EZIO LuaCJson::LuaCJson)
+target_link_libraries(cxlua 
+  PUBLIC 
+    EZIO::EZIO 
+    LuaCJson::LuaCJson
+    Nlohmann 
+    NESupport::NESupport 
+    glm
+)
 
 include(cmake/HelperMacroFunction.cmake)
 export_library_macro(cxlua CXLua CXLua:: lib/cmake/cxlua)
