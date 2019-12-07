@@ -25,7 +25,6 @@ add_library(cxlua
     src/lua_net.cpp
     src/net_thread_queue.cpp
     src/cxlua.cpp
-    src/protocol.cpp
     src/utils.cpp
     src/cxmath.cpp
     src/cxrandom.cpp

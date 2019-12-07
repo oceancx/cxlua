@@ -1,4 +1,5 @@
 #include "cxlua.h"
+#include "tsv.h"
 
 std::string DEFAULT_CWD = "";
 bool check_lua_error(lua_State* L, int res, const char* func)
@@ -35,7 +36,26 @@ int lua_get_default_cwd(lua_State*L )
 	return 1;
 }
 
+static int s_EnumCounter = 0;
+int enum_reset(){
+	s_EnumCounter = 0;
+	return s_EnumCounter;
+}
+
+int enum_next() {
+	return ++s_EnumCounter;
+}
+
+
+
 void luaopen_cxlua(lua_State* L)
 {
+	luaopen_tsv(L);
+	luaopen_net_thread_queue(L);
+	luaopen_netlib(L);
+	
+	script_system_register_function(L, enum_reset);
+	script_system_register_function(L, enum_next);
+	
 	script_system_register_luac_function_with_name(L, "get_default_cwd", lua_get_default_cwd);
 }
