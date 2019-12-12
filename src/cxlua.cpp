@@ -13,6 +13,61 @@ bool check_lua_error(lua_State* L, int res, const char* func)
 	return true;
 }
 
+
+std::map<std::string, std::string> g_CmdArgs;
+void handle_command_args(int argc,char *argv[])
+{
+	g_CmdArgs["argv0"] = argv[0];
+	for (int i = 1; i < argc; i++)
+	{
+		std::string argi = argv[i];
+		printf("%s\n", argi.c_str());
+
+		if (argi.substr(0, 2) == "--") {
+			argi = argi.substr(2, argi.size());
+			auto kv = utils::split(argi, '=');
+			g_CmdArgs[kv[0]] = kv[1];
+		}
+		else if (argi.substr(0, 1) == "-") {
+			argi = argi.substr(1, argi.size());
+			g_CmdArgs[argi] = "";
+		}
+	}
+}
+
+
+const char* command_arg_get(const char* key)
+{
+	if (g_CmdArgs.find(key) == g_CmdArgs.end()) {
+		return nullptr;
+	}else{
+		return g_CmdArgs[key].c_str();
+	}
+}
+
+const char* command_arg_opt_str(const char* key, const char* def){
+	auto arg = command_arg_get(key);
+	if (arg) {
+		return arg;
+	}
+	else {
+		return def;
+	}
+}
+
+int command_arg_opt_int(const char* key, int def)
+{
+	auto arg = command_arg_get(key);
+	if (arg) {
+		int intarg = std::stoi(arg);
+		return intarg;
+	}
+	else {
+		return def;
+	}
+}
+
+
 void init_default_cwd(const char* arg0)
 {
 	std::string PATH_SEP = "";
