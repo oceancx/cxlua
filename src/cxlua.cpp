@@ -102,9 +102,12 @@ int enum_next() {
 }
 
 
+#define luaL_requirelib(L,name,fn) (luaL_requiref(L, name, fn, 1),lua_pop(L, 1))
+extern "C" int luaopen_cjson(lua_State * L);
 
 void luaopen_cxlua(lua_State* L)
 {
+	luaL_requirelib(L, "cjson", luaopen_cjson);
 	luaopen_tsv(L);
 	luaopen_net_thread_queue(L);
 	luaopen_netlib(L);
