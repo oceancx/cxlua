@@ -66,8 +66,8 @@ NetThreadQueue* lua_check_net_thread_queue(lua_State*L, int index)
 {
 	NetThreadQueue** ptr = (NetThreadQueue**)lua_touserdata(L, index);
 	return *ptr;
-}
-
+} 
+ 
 int net_thread_queue_push_back(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
