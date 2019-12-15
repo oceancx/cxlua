@@ -115,5 +115,9 @@ void luaopen_cxlua(lua_State* L)
 	script_system_register_function(L, enum_reset);
 	script_system_register_function(L, enum_next);
 	
+	script_system_register_function(L, command_arg_get);
+	script_system_register_function(L, command_arg_opt_str);
+	script_system_register_function(L, command_arg_opt_int);
+
 	script_system_register_luac_function_with_name(L, "get_default_cwd", lua_get_default_cwd);
 }
