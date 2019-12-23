@@ -4,6 +4,10 @@
 #include <ezio/event_loop.h>
 #include "ezio/tcp_server.h"
 #include <chrono>
+#include "ezio/tcp_client.h"
+#include "cxlua.h"
+#include "ezio/io_service_context.h"
+#include "kbase/at_exit_manager.h"
 using namespace ezio;
 
 static const char* skey_mt_tcp_connection = "key_mt_tcp_connection";
@@ -425,43 +429,43 @@ int ez_event_loop_destroy(lua_State* L) {
 }
 
 //TCPServer
-int ez_tcp_server_start(lua_State*L) {
+int ez_tcp_server_start(lua_State* L) {
 	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	tcpserver->Start();
 	return 0;
 }
 
-int ez_tcp_server_ip_port(lua_State*L) {
+int ez_tcp_server_ip_port(lua_State* L) {
 	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	auto ret = tcpserver->ip_port();
 	lua_pushstring(L, ret.c_str());
 	return 1;
 }
 
-int ez_tcp_server_name(lua_State*L) {
+int ez_tcp_server_name(lua_State* L) {
 	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	auto name = tcpserver->name();
 	lua_pushstring(L, name.c_str());
 	return 1;
 }
 
-int ez_tcp_server_set_on_connection(lua_State*L) {
+int ez_tcp_server_set_on_connection(lua_State* L) {
 	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	tcpserver->set_on_connection([L,ref](const TCPConnectionPtr &conn) {
+	tcpserver->set_on_connection([L, ref](const TCPConnectionPtr& conn) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
 		lua_push_tcp_connection(L, conn);
 		int res = lua_pcall(L, 1, 0, 0);
 		check_lua_error(L, res);
-	});
+		});
 	return 0;
 }
-int ez_tcp_server_set_on_message(lua_State*L) {
+int ez_tcp_server_set_on_message(lua_State* L) {
 	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	tcpserver->set_on_message([L, ref](const TCPConnectionPtr &conn, Buffer &buf, TimePoint ts) {
+	tcpserver->set_on_message([L, ref](const TCPConnectionPtr& conn, Buffer& buf, TimePoint ts) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
 		lua_push_tcp_connection(L, conn);
 		lua_push_ezio_buffer(L, buf);
@@ -492,7 +496,7 @@ void lua_push_ez_tcp_server(lua_State* L, TCPServer* server)
 	lua_setmetatable(L, -2);
 }
 
-int ez_tcp_server_create(lua_State*L)
+int ez_tcp_server_create(lua_State* L)
 {
 	EventLoop* loop = lua_check_pointer<EventLoop>(L, 1);
 	auto port = (int)lua_tointeger(L, 2);
@@ -507,8 +511,140 @@ int ez_tcp_server_destroy(lua_State* L) {
 	delete sp;
 	return 0;
 }
-
  
+//Client 
+int ez_tcp_client_connect(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	tcpclient->Connect();
+	return 0;
+}
+
+int ez_tcp_client_disconnect(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	tcpclient->Disconnect();
+	return 0;
+}
+
+int ez_tcp_client_cancel(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	tcpclient->Cancel();
+	return 0;
+}
+
+int ez_tcp_client_name(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	auto name = tcpclient->name();
+	lua_pushstring(L, name.c_str());
+	return 1;
+}
+
+int ez_tcp_client_connection(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	auto connection = tcpclient->connection();
+	lua_push_tcp_connection(L, connection);
+	return 1;
+}
+
+int ez_tcp_client_set_on_connection(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	lua_pushvalue(L, 2);
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	tcpclient->set_on_connection([L, ref](const TCPConnectionPtr& conn) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+		lua_push_tcp_connection(L, conn);
+		int res = lua_pcall(L, 1, 0, 0);
+		check_lua_error(L, res);
+		});
+	return 0;
+}
+int ez_tcp_client_set_on_message(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	lua_pushvalue(L, 2);
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	tcpclient->set_on_message([L, ref](const TCPConnectionPtr& conn, Buffer& buf, TimePoint ts) {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+		lua_push_tcp_connection(L, conn);
+		lua_push_ezio_buffer(L, buf);
+		uint64_t tm = ts.time_since_epoch().count() / 10000;
+		lua_pushinteger(L, tm);
+		int res = lua_pcall(L, 3, 0, 0);
+		check_lua_error(L, res);
+		});
+	return 0;
+}
+
+luaL_Reg MT_EZ_TCP_CLIENT[] = {
+	{ "Connect",ez_tcp_client_connect},
+	{ "Disconnect",ez_tcp_client_disconnect},
+	{ "Cancel",ez_tcp_client_cancel},
+	{ "name",ez_tcp_client_name},
+	{ "connection",ez_tcp_client_connection},
+	{ "set_on_connection",ez_tcp_client_set_on_connection},
+	{ "set_on_message",ez_tcp_client_set_on_message},
+};
+
+void lua_push_ez_tcp_client(lua_State* L, TCPClient* client)
+{
+	lua_push_pointer(L, client);
+	if (luaL_newmetatable(L, "MT_EZ_TCP_CLIENT")) {
+		luaL_setfuncs(L, MT_EZ_TCP_CLIENT, 0);
+		lua_pushvalue(L, -1);
+		lua_setfield(L, -2, "__index");
+	}
+	lua_setmetatable(L, -2);
+}
+
+int ez_tcp_client_create(lua_State* L)
+{
+	EventLoop* loop = lua_check_pointer<EventLoop>(L, 1);
+	auto ip = lua_tostring(L, 2);
+	auto port = (int)lua_tointeger(L, 3);
+	auto name = lua_tostring(L, 4);
+	SocketAddress addr(ip, (unsigned short)port);
+	lua_push_ez_tcp_client(L, new TCPClient(loop, addr, name));
+	return 1;
+}
+
+int ez_tcp_client_destroy(lua_State* L) {
+	auto* sp = lua_check_pointer<TCPClient>(L, 1);
+	delete sp;
+	return 0;
+}
+
+int newthread_dofile(lua_State* L){
+	const char* path = lua_tostring(L, 1);
+	new std::thread([path]() {
+		lua_State* _L = luaL_newstate();
+		luaL_openlibs(_L);
+		luaopen_cxlua(_L);
+		int res = luaL_dofile(_L, path);
+		check_lua_error(_L, res);
+		lua_close(_L);
+	});
+	return 0;
+}
+
+int newthread_dostring(lua_State* L) {
+	const char* code = lua_tostring(L, 1);
+	new std::thread([code]() {
+		lua_State* _L = luaL_newstate();
+		luaL_openlibs(_L);
+		luaopen_cxlua(_L);
+		int res = luaL_dostring(_L, code);
+		check_lua_error(_L, res);
+		lua_close(_L);
+		});
+	return 0;
+}
+
+void io_service_context_init(){
+	ezio::IOServiceContext::Init();
+}
+
+void at_exit_manager_init() {
+	new kbase::AtExitManager();
+}
+
 
 #define register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))
 void luaopen_netlib(lua_State* L)
@@ -537,4 +673,12 @@ void luaopen_netlib(lua_State* L)
 
 	register_luac_function(L, ez_tcp_server_create);
 	register_luac_function(L, ez_tcp_server_destroy);
+
+	register_luac_function(L, ez_tcp_client_create);
+	register_luac_function(L, ez_tcp_client_destroy);
+
+	register_luac_function(L, newthread_dofile);
+	register_luac_function(L, newthread_dostring);
+	script_system_register_function(L, io_service_context_init);
+	script_system_register_function(L, at_exit_manager_init);
 }
