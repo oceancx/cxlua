@@ -10,6 +10,20 @@ extern "C" {
 #include <cmath>
 #include <string>
 
+template <typename T>
+T* lua_check_pointer(lua_State* L, int index) {
+	T** ptr = (T**)lua_touserdata(L, index);
+	return *ptr;
+};
+
+template <typename T>
+void lua_push_pointer(lua_State* L, T* ptr) {
+	T** ud = (T**)lua_newuserdata(L, sizeof(T*));
+	*ud = ptr;
+}
+
+
+
 bool check_lua_error(lua_State* L, int res, const char* func="");
 
 template <typename Ret, typename... Args>
