@@ -49,10 +49,21 @@ int tcp_connection_send(lua_State* L)
 	return 0;
 }
 
+
+int tcp_connection_Send(lua_State* L)
+{
+	TCPConnection* conn = lua_check_tcpconnection(L, 1);
+	Buffer* buff = lua_check_buffer(L, 2);
+	conn->Send({ buff->Peek(),buff->readable_size() });
+	return 0;
+}
+
+
 luaL_Reg mt_tcp_connection_reg[] = {
 	{ "tohostport",tcp_connection_to_host_port},
 	{ "connected",tcp_connection_connected},
 	{ "send",tcp_connection_send },
+	{ "Send",tcp_connection_Send },
 	{ NULL, NULL }
 };
 
@@ -513,6 +524,14 @@ int ez_tcp_server_destroy(lua_State* L) {
 }
  
 //Client 
+
+int ez_tcp_client_is_connected(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	auto conn = tcpclient->connection();
+	lua_pushboolean(L, conn &&conn->connected());
+	return 1;
+}
+
 int ez_tcp_client_connect(lua_State* L) {
 	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
 	tcpclient->Connect();
@@ -574,6 +593,7 @@ int ez_tcp_client_set_on_message(lua_State* L) {
 }
 
 luaL_Reg MT_EZ_TCP_CLIENT[] = {
+	{ "IsConnected",ez_tcp_client_is_connected},
 	{ "Connect",ez_tcp_client_connect},
 	{ "Disconnect",ez_tcp_client_disconnect},
 	{ "Cancel",ez_tcp_client_cancel},
