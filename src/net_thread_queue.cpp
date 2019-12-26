@@ -55,12 +55,7 @@ void NetThreadQueue::Clear(int q)
 	m_Locks[q].unlock();
 }
 
-void lua_push_net_thread_queue(lua_State*L, NetThreadQueue* q)
-{
-	NetThreadQueue** ptr = (NetThreadQueue**)lua_newuserdata(L, sizeof(NetThreadQueue*));
-	*ptr = q;
-	luaL_setmetatable(L, "mt_net_thread_queue");
-}
+
 
 NetThreadQueue* lua_check_net_thread_queue(lua_State*L, int index)
 {
@@ -132,7 +127,7 @@ int net_thread_queue_clear(lua_State* L)
 	ptr->Clear(q);
 	return 0;
 }
-luaL_Reg mt_net_thread_queue[] = {
+luaL_Reg MT_NET_THREAD_QUEUE[] = {
 	{ "push_back",net_thread_queue_push_back },
 	{ "pop_front",net_thread_queue_pop_front },
 	{ "front_as_string",net_thread_queue_front_as_string},
@@ -142,15 +137,18 @@ luaL_Reg mt_net_thread_queue[] = {
 	{ "clear",net_thread_queue_clear },
 	{ NULL, NULL }
 };
-
-int net_thread_queue_create(lua_State* L) {
-	lua_push_pointer(L, new NetThreadQueue());
+void lua_push_net_thread_queue(lua_State*L, NetThreadQueue* q)
+{
+	lua_push_pointer(L, q);
 	if (luaL_newmetatable(L, "MT_NET_THREAD_QUEUE")) {
-		luaL_setfuncs(L, mt_net_thread_queue, 0);
+		luaL_setfuncs(L, MT_NET_THREAD_QUEUE, 0);
 		lua_pushvalue(L, -1);
 		lua_setfield(L, -2, "__index");
 	}
 	lua_setmetatable(L, -2);
+}
+int net_thread_queue_create(lua_State* L) {
+	lua_push_net_thread_queue(L, new NetThreadQueue());
 	return 1;
 }
 
@@ -163,13 +161,13 @@ int net_thread_queue_destroy(lua_State* L) {
 #define register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))
 void luaopen_net_thread_queue(lua_State* L)
 {
-	if (luaL_newmetatable(L, "mt_net_thread_queue")) {
+	/*if (luaL_newmetatable(L, "mt_net_thread_queue")) {
 		luaL_setfuncs(L, mt_net_thread_queue, 0);
 		lua_setfield(L, -1, "__index");
 	}
 	else {
 		std::cout << "associate mt_net_thread_queue error!" << std::endl;
-	}
+	}*/
 	register_luac_function(L, net_thread_queue_create);
 	register_luac_function(L, net_thread_queue_destroy);
 }

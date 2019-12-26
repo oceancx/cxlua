@@ -301,7 +301,7 @@ int ez_event_loop_quit(lua_State*L) {
 
 int ez_event_loop_queue_task(lua_State*L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
-	lua_pushvalue(L, 2);
+	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	loop->QueueTask([L,ref]() {
 		if(L){
@@ -316,7 +316,7 @@ int ez_event_loop_queue_task(lua_State*L) {
 
 int ez_event_loop_run_task(lua_State*L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
-	lua_pushvalue(L, 2);
+	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	loop->RunTask([L, ref]() {
 		if (L) {
@@ -408,6 +408,7 @@ luaL_Reg MT_EZ_EVENT_LOOP[] = {
 	{ "RegisterNotifier",ez_event_loop_register_notifier },
 	{ "UnregisterNotifier",ez_event_loop_unregister_notifier },
 	{ "Wakeup",ez_event_loop_wakeup },
+	{ NULL, NULL}
 };
 
 void lua_push_ez_event_loop(lua_State* L, EventLoop* loop)
@@ -423,13 +424,7 @@ void lua_push_ez_event_loop(lua_State* L, EventLoop* loop)
 
 int ez_event_loop_create(lua_State*L)
 {
-	lua_push_pointer(L, new ezio::EventLoop());
-	if (luaL_newmetatable(L, "MT_EZ_EVENT_LOOP")) {
-		luaL_setfuncs(L, MT_EZ_EVENT_LOOP, 0);
-		lua_pushvalue(L, -1);
-		lua_setfield(L, -2, "__index");
-	}
-	lua_setmetatable(L, -2);
+	lua_push_ez_event_loop(L, new EventLoop());
 	return 1;
 }
 
@@ -447,22 +442,22 @@ int ez_tcp_server_start(lua_State* L) {
 }
 
 int ez_tcp_server_ip_port(lua_State* L) {
-	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
+	TCPServer* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	auto ret = tcpserver->ip_port();
 	lua_pushstring(L, ret.c_str());
 	return 1;
 }
 
 int ez_tcp_server_name(lua_State* L) {
-	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
+	TCPServer* tcpserver = lua_check_pointer<TCPServer>(L, 1);
 	auto name = tcpserver->name();
 	lua_pushstring(L, name.c_str());
 	return 1;
 }
 
 int ez_tcp_server_set_on_connection(lua_State* L) {
-	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
-	lua_pushvalue(L, 2);
+	TCPServer* tcpserver = lua_check_pointer<TCPServer>(L, 1);
+	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	tcpserver->set_on_connection([L, ref](const TCPConnectionPtr& conn) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
@@ -473,8 +468,8 @@ int ez_tcp_server_set_on_connection(lua_State* L) {
 	return 0;
 }
 int ez_tcp_server_set_on_message(lua_State* L) {
-	auto* tcpserver = lua_check_pointer<TCPServer>(L, 1);
-	lua_pushvalue(L, 2);
+	TCPServer* tcpserver = lua_check_pointer<TCPServer>(L, 1);
+	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	tcpserver->set_on_message([L, ref](const TCPConnectionPtr& conn, Buffer& buf, TimePoint ts) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
@@ -488,23 +483,19 @@ int ez_tcp_server_set_on_message(lua_State* L) {
 	return 0;
 }
 
-luaL_Reg MT_EZ_TCP_SERVER[] = {
+static luaL_Reg MT_EZ_TCP_SERVER[] = {
 	{ "Start",ez_tcp_server_start },
 	{ "ip_port",ez_tcp_server_ip_port },
 	{ "name",ez_tcp_server_name},
 	{ "set_on_connection",ez_tcp_server_set_on_connection},
 	{ "set_on_message",ez_tcp_server_set_on_message},
+	{ NULL, NULL}
 };
 
 void lua_push_ez_tcp_server(lua_State* L, TCPServer* server)
 {
-	lua_push_pointer(L, server);
-	if (luaL_newmetatable(L, "MT_EZ_TCP_SERVER")) {
-		luaL_setfuncs(L, MT_EZ_TCP_SERVER, 0);
-		lua_pushvalue(L, -1);
-		lua_setfield(L, -2, "__index");
-	}
-	lua_setmetatable(L, -2);
+	lua_push_pointer<TCPServer>(L, server);
+	luaL_setmetatable(L, "MT_EZ_TCP_SERVER");
 }
 
 int ez_tcp_server_create(lua_State* L)
@@ -513,7 +504,7 @@ int ez_tcp_server_create(lua_State* L)
 	auto port = (int)lua_tointeger(L, 2);
 	auto name = lua_tostring(L, 3);
 	SocketAddress addr((unsigned short)port);
-	lua_push_ez_tcp_server(L, new ezio::TCPServer(loop, addr, name));
+	lua_push_ez_tcp_server(L, new TCPServer(loop, addr, name));
 	return 1;
 }
 
@@ -565,8 +556,8 @@ int ez_tcp_client_connection(lua_State* L) {
 }
 
 int ez_tcp_client_set_on_connection(lua_State* L) {
-	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
-	lua_pushvalue(L, 2);
+	TCPClient* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	tcpclient->set_on_connection([L, ref](const TCPConnectionPtr& conn) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
@@ -577,8 +568,8 @@ int ez_tcp_client_set_on_connection(lua_State* L) {
 	return 0;
 }
 int ez_tcp_client_set_on_message(lua_State* L) {
-	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
-	lua_pushvalue(L, 2);
+	TCPClient* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
 	tcpclient->set_on_message([L, ref](const TCPConnectionPtr& conn, Buffer& buf, TimePoint ts) {
 		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
@@ -592,7 +583,7 @@ int ez_tcp_client_set_on_message(lua_State* L) {
 	return 0;
 }
 
-luaL_Reg MT_EZ_TCP_CLIENT[] = {
+static luaL_Reg MT_EZ_TCP_CLIENT[] = {
 	{ "IsConnected",ez_tcp_client_is_connected},
 	{ "Connect",ez_tcp_client_connect},
 	{ "Disconnect",ez_tcp_client_disconnect},
@@ -601,17 +592,13 @@ luaL_Reg MT_EZ_TCP_CLIENT[] = {
 	{ "connection",ez_tcp_client_connection},
 	{ "set_on_connection",ez_tcp_client_set_on_connection},
 	{ "set_on_message",ez_tcp_client_set_on_message},
+	{ NULL, NULL}
 };
 
 void lua_push_ez_tcp_client(lua_State* L, TCPClient* client)
 {
-	lua_push_pointer(L, client);
-	if (luaL_newmetatable(L, "MT_EZ_TCP_CLIENT")) {
-		luaL_setfuncs(L, MT_EZ_TCP_CLIENT, 0);
-		lua_pushvalue(L, -1);
-		lua_setfield(L, -2, "__index");
-	}
-	lua_setmetatable(L, -2);
+	lua_push_pointer<TCPClient>(L, client);
+	luaL_setmetatable(L, "MT_EZ_TCP_CLIENT");
 }
 
 int ez_tcp_client_create(lua_State* L)
@@ -683,6 +670,16 @@ void luaopen_netlib(lua_State* L)
 	}
 	else {
 		std::cout << "associate mt_buffer error!" << std::endl;
+	}
+
+	if (luaL_newmetatable(L, "MT_EZ_TCP_SERVER")) {
+		luaL_setfuncs(L, MT_EZ_TCP_SERVER, 0);
+		lua_setfield(L, -1, "__index");
+	}
+
+	if (luaL_newmetatable(L, "MT_EZ_TCP_CLIENT")) {
+		luaL_setfuncs(L, MT_EZ_TCP_CLIENT, 0);
+		lua_setfield(L, -1, "__index");
 	}
 
 	register_luac_function(L, ezio_buffer_create);
