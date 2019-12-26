@@ -143,7 +143,24 @@ luaL_Reg mt_net_thread_queue[] = {
 	{ NULL, NULL }
 };
 
+int net_thread_queue_create(lua_State* L) {
+	lua_push_pointer(L, new NetThreadQueue());
+	if (luaL_newmetatable(L, "MT_NET_THREAD_QUEUE")) {
+		luaL_setfuncs(L, mt_net_thread_queue, 0);
+		lua_pushvalue(L, -1);
+		lua_setfield(L, -2, "__index");
+	}
+	lua_setmetatable(L, -2);
+	return 1;
+}
 
+int net_thread_queue_destroy(lua_State* L) {
+	auto* sp = lua_check_pointer<NetThreadQueue>(L, 1);
+	delete sp;
+	return 0;
+}
+
+#define register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))
 void luaopen_net_thread_queue(lua_State* L)
 {
 	if (luaL_newmetatable(L, "mt_net_thread_queue")) {
@@ -153,4 +170,6 @@ void luaopen_net_thread_queue(lua_State* L)
 	else {
 		std::cout << "associate mt_net_thread_queue error!" << std::endl;
 	}
+	register_luac_function(L, net_thread_queue_create);
+	register_luac_function(L, net_thread_queue_destroy);
 }
