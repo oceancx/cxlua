@@ -35,6 +35,9 @@ void handle_command_args(int argc,char *argv[])
 	}
 }
 
+bool command_arg_check(const char* key){
+	return g_CmdArgs.find(key) != g_CmdArgs.end();
+}
 
 const char* command_arg_get(const char* key)
 {
@@ -115,6 +118,7 @@ void luaopen_cxlua(lua_State* L)
 	script_system_register_function(L, enum_reset);
 	script_system_register_function(L, enum_next);
 	
+	script_system_register_function(L, command_arg_check);
 	script_system_register_function(L, command_arg_get);
 	script_system_register_function(L, command_arg_opt_str);
 	script_system_register_function(L, command_arg_opt_int);
