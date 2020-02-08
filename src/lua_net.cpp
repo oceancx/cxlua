@@ -535,6 +535,20 @@ int ez_tcp_client_disconnect(lua_State* L) {
 	return 0;
 }
 
+int ez_tcp_client_set_auto_reconnect(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	bool _auto = lua_toboolean(L, 2);
+	tcpclient->set_auto_reconnect(_auto);
+	return 0;
+}
+
+int ez_tcp_client_shutdown(lua_State* L) {
+	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
+	tcpclient->connection()->Shutdown();
+	return 0;
+}
+
+
 int ez_tcp_client_cancel(lua_State* L) {
 	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
 	tcpclient->Cancel();
@@ -586,7 +600,9 @@ int ez_tcp_client_set_on_message(lua_State* L) {
 static luaL_Reg MT_EZ_TCP_CLIENT[] = {
 	{ "IsConnected",ez_tcp_client_is_connected},
 	{ "Connect",ez_tcp_client_connect},
+	{ "Cancel",ez_tcp_client_cancel},
 	{ "Disconnect",ez_tcp_client_disconnect},
+	{ "set_auto_reconnect",ez_tcp_client_set_auto_reconnect},
 	{ "Cancel",ez_tcp_client_cancel},
 	{ "name",ez_tcp_client_name},
 	{ "connection",ez_tcp_client_connection},
