@@ -83,5 +83,9 @@ namespace utils
 	};
 };
 
+uint64_t res_encode_was(uint32_t pack, uint32_t wasID);
+void res_decode_was(uint64_t resID, uint32_t& pack, uint32_t& wasID);
+
+
 int utils_str_is_number(const std::string& str);
 void luaopen_tsv(lua_State* L);

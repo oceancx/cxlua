@@ -2,6 +2,9 @@
 #include <fstream>
 #include <sstream>
 using String = std::string;
+using std::string;
+using std::map;
+using std::vector;
 using Json = nlohmann::json;
 namespace utils
 {
@@ -204,74 +207,112 @@ int utils_str_is_number(const std::string& str)
 int utils_parse_tsv_file_as_table(lua_State*L)
 {
 	const char* path = luaL_checkstring(L, 1);
-	bool parse_val_type= lua_toboolean(L, 2);
 
 	
 	std::ifstream fs(path);
-	if (!fs)
-	{
+	if (!fs){
 		printf("utils_parse_tsv_file read file error!");
 		return 0;
 	};
 
-	fs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	/*fs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	std::stringstream  ss;
 	ss << fs.rdbuf();
-	fs.close();
-
-	std::string file_content = ss.str();
-	std::vector<std::string> rows = utils::split(file_content, '\n');
+	fs.close();*/
 	
-	if (rows.size() > 0)
-	{
-		std::vector<std::string> keys = utils::split(rows[0], '\t');
-		//generate a new table
-		lua_newtable(L);
-		int table_index = 1;
-		for (size_t i = 1; i < rows.size(); i++)
-		{
-			if (rows[i][0] == '*')continue;
-			//generate a row
-			std::vector<std::string> vals = utils::split(rows[i], '\t');
-			lua_pushinteger(L, table_index++);
-			lua_newtable(L);
-			for (size_t j = 0; j < keys.size() ; j++)
-			{
-				const auto& key = keys[j];
-				const auto& val = (j < vals.size()) ? vals[j] : std::string("");
-				
-				if (parse_val_type)
-				{
-					int val_type = utils_str_is_number(val);
-					if (val_type == 0)
-					{
-						lua_pushargs(L, val.c_str());
-					}
-					else if (val_type == 1)
-					{
-						lua_pushargs(L, std::atoi(val.c_str()));
-					}
-					else if (val_type == 2)
-					{
-						lua_pushargs(L, std::atof(val.c_str()));
-					}
-				}
-				else
-				{
-					lua_pushargs(L, val.c_str());
-				}
+	std::string line;
+	vector<string> col_names;
+	map<string, int> col_indices;
+	vector<map<string,string>> read_cols;
+	
+	lua_pushnil(L);
+	while (lua_next(L, 2) != 0) {
+		map<string, string> fmt;
+		lua_pushnil(L);
+		while (lua_next(L, -2) != 0) {
+			string key = lua_tostring(L, -2);
+			string val = lua_tostring(L, -1);
+			fmt[key] = val;
+			lua_pop(L, 1);
+		}
+		read_cols.push_back(fmt);
+		lua_pop(L, 1);
+	}
 
+	lua_newtable(L);
+	int table_index = 0;
+	while (std::getline(fs, line)) {
+		if (table_index == 0) {
+			table_index = 1;
+			col_names = utils::split_by_cuts(line, '\t');
+			int temp_i = 0;
+			for (auto& name : col_names) {
+				col_indices[name] = temp_i++;
+			}
+			continue;
+		}
+		if (line[0] == '*') continue;
+		
+		vector<string> vals = utils::split_by_cuts(line, '\t');
+		assert(vals.size() == col_names.size());
+
+		lua_newtable(L);
+		
+		for (auto& col : read_cols) {
+			string key = col["name"];
+
+			string val = vals[col_indices[col["name"]]];
+			auto def_it = col.find("def");
+			if (def_it != col.end()) {
+				if(val == ""){
+					val = def_it->second;
+				}
+			}
+			auto fmt_it = col.find("fmt");
+			if (fmt_it != col.end()) {
+				if (fmt_it->second == "i") {
+					int64_t i = std::stoi(val);
+					lua_pushinteger(L, i);
+					lua_setfield(L, -2, key.c_str());
+				}
+				else if (fmt_it->second == "n") {
+					double n = std::stod(val);
+					lua_pushnumber(L, n);
+					lua_setfield(L, -2, key.c_str());
+				}
+				else if (fmt_it->second == "pos") {
+					auto v2 = utils::split_by_cuts(val, ',');
+					lua_newtable(L);
+					if (v2.size() == 2) {
+						lua_pushnumber(L, std::stod(v2[0]));
+						lua_setfield(L, -2, "x");
+						lua_pushnumber(L, std::stod(v2[1]));
+						lua_setfield(L, -2, "y");
+					}
+					else {
+						lua_pushnumber(L, 0);
+						lua_setfield(L, -2, "x");
+						lua_pushnumber(L, 0);
+						lua_setfield(L, -2, "y");
+					}
+					lua_setfield(L, -2, key.c_str());
+				}
+			}else{
+				lua_pushstring(L, val.c_str());
 				lua_setfield(L, -2, key.c_str());
 			}
-			lua_settable(L, -3);
 		}
-		return 1;
+		lua_seti(L, -2, table_index++);
 	}
-	else
-	{
-		return 0;
-	}
+	fs.close();
 
+	lua_newtable(L);
+	table_index = 1;
+	for(auto& cname : col_names){
+		lua_pushstring(L, cname.c_str());
+		lua_seti(L, -2, table_index++);
+	}
+	return 2;
 }
 
 int utils_str_split(lua_State*L)
@@ -368,14 +409,67 @@ int utils_file_write(lua_State*L)
 }
 
 
+uint64_t res_encode_was(uint32_t pack, uint32_t wasID) {
+	uint64_t resID = pack; return (resID << 32) | wasID;
+}
+
+void res_decode_was(uint64_t resID, uint32_t& pack, uint32_t& wasID) {
+	pack = resID >> 32; wasID = (resID & 4294967295);
+}
+
+uint64_t EncodeWAS(uint32_t pack, uint32_t wasID) { uint64_t resID = pack; return (resID << 32) | wasID; }
+
+void DecodeWAS(uint64_t resID, uint32_t& pack, uint32_t& wasID) { pack = resID >> 32; wasID = (resID & 4294967295); };
+
+
+int res_encode(lua_State* L) {
+	uint32_t pack = (uint32_t)lua_tointeger(L, 1);
+	uint32_t wasid = (uint32_t)lua_tointeger(L, 2);
+	lua_pushinteger(L,EncodeWAS(pack, wasid));
+	return 1;
+}
+
+int res_decode(lua_State* L) {
+	uint64_t res = (uint64_t)lua_tointeger(L, 1);
+	uint32_t pack = 0;
+	uint32_t wasID = 0;
+	DecodeWAS(res, pack, wasID);
+	lua_pushinteger(L, pack);
+	lua_pushinteger(L, wasID);
+	return 2;
+}
+
+int res_parse_resid(lua_State* L) {
+	const char* str = lua_tostring(L, 1);
+	auto strs = utils::split(str, '-');
+	if (strs.size() != 2) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+	uint32_t pack = std::stoul(strs[0], 0);
+	uint32_t wasID = std::stoul(strs[1], 0, 16);
+	lua_pushinteger(L, res_encode_was(pack, wasID));
+	return 1;
+}
+
+
+
 void luaopen_tsv(lua_State* L)
 {
 	script_system_register_luac_function(L, utils_parse_tsv_file);
 	script_system_register_luac_function(L, utils_parse_tsv_file_as_table);
+
+	script_system_register_luac_function_with_name(L, "utils_parse_tsv",utils_parse_tsv_file_as_table);
+	
 	script_system_register_luac_function(L, utils_str_split);
 	script_system_register_luac_function(L, utils_file_open);
 	script_system_register_luac_function(L, utils_file_close);
 	script_system_register_luac_function(L, utils_file_write);
 	script_system_register_function(L, utils_resave_tsv_file);
+
+	script_system_register_luac_function(L, res_encode);
+	script_system_register_luac_function(L, res_decode);
+
+	script_system_register_luac_function(L, res_parse_resid);
 }
 
