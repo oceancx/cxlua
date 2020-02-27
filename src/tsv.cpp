@@ -260,7 +260,7 @@ int utils_parse_tsv_file(lua_State*L)
 					lua_setfield(L, -2, key.c_str());
 				}
 				else if (fmt_it->second == "res") {
-					auto strs = utils::split_by_cuts(val, ',');
+					auto strs = utils::split_by_cuts(val, '-');
 					if (strs.size() == 2) {
 						uint32_t pack = std::stoul(strs[0], 0);
 						uint32_t wasID = std::stoul(strs[1], 0, 16);
