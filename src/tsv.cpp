@@ -180,21 +180,23 @@ int utils_parse_tsv_file(lua_State*L)
 	vector<string> col_names;
 	map<string, int> col_indices;
 	vector<map<string,string>> read_cols;
-	
-	lua_pushnil(L);
-	while (lua_next(L, 2) != 0) {
-		map<string, string> fmt;
+	bool parse_columns = !lua_isnil(L, 2);
+	if (parse_columns) {
 		lua_pushnil(L);
-		while (lua_next(L, -2) != 0) {
-			string key = lua_tostring(L, -2);
-			string val = lua_tostring(L, -1);
-			fmt[key] = val;
+		while (lua_next(L, 2) != 0) {
+			map<string, string> fmt;
+			lua_pushnil(L);
+			while (lua_next(L, -2) != 0) {
+				string key = lua_tostring(L, -2);
+				string val = lua_tostring(L, -1);
+				fmt[key] = val;
+				lua_pop(L, 1);
+			}
+			read_cols.push_back(fmt);
 			lua_pop(L, 1);
 		}
-		read_cols.push_back(fmt);
-		lua_pop(L, 1);
 	}
-
+	
 	lua_newtable(L);
 	int table_index = 0;
 	while (std::getline(fs, line)) {
@@ -205,7 +207,7 @@ int utils_parse_tsv_file(lua_State*L)
 			int temp_i = 0;
 			for (auto& name : col_names) {
 				col_indices[name] = temp_i++;
-				if (read_cols.size() == 0) {
+				if (!parse_columns) {
 					read_cols.push_back({ {"name",name} });
 				}
 			}
@@ -254,6 +256,18 @@ int utils_parse_tsv_file(lua_State*L)
 						lua_setfield(L, -2, "x");
 						lua_pushnumber(L, 0);
 						lua_setfield(L, -2, "y");
+					}
+					lua_setfield(L, -2, key.c_str());
+				}
+				else if (fmt_it->second == "res") {
+					auto strs = utils::split_by_cuts(val, ',');
+					if (strs.size() == 2) {
+						uint32_t pack = std::stoul(strs[0], 0);
+						uint32_t wasID = std::stoul(strs[1], 0, 16);
+						lua_pushinteger(L, res_encode_was(pack, wasID));
+					}
+					else {
+						lua_pushinteger(L, 0);
 					}
 					lua_setfield(L, -2, key.c_str());
 				}
