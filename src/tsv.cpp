@@ -76,50 +76,6 @@ namespace utils
 	}
 }
 
-int utils_parse_tsv_file(lua_State*L )
-{
-	const char* path = luaL_checklstring(L, 1, NULL);
-	std::ifstream fs(path);
-	if (!fs)
-	{
-		printf("utils_parse_tsv_file read file error!");
-		return 0;
-	};
-
-	fs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	std::stringstream  ss;
-	ss << fs.rdbuf();
-	fs.close();
-
-	std::string file_content = ss.str();
-	std::vector<std::string> rows = utils::split(file_content, '\n');
-	if (rows.size() > 0)
-	{
-		std::vector<std::string> keys = utils::split(rows[0], '\t');
-		if (keys.size() > 0)
-		{
-			Json tsv_parsed_rows = Json();
-			int tsv_index = 1;
-			for (size_t i = 1; i < rows.size(); i++)
-			{
-				if(rows[i][0] == '*')continue;
-				Json& tsv_row = tsv_parsed_rows[std::to_string(tsv_index++)];
-				std::vector<std::string> vals = utils::split(rows[i], '\t');
-				assert(keys.size() == vals.size());
-				
-				for (size_t j = 0; j < keys.size(); j++)
-				{
-					tsv_row[keys[j]] = vals[j];
-				}
-			}
-			lua_pushstring(L, tsv_parsed_rows.dump().c_str());
-			return 1;
-		}
-	}
-	
-	return 0;
-}
-
 void utils_resave_tsv_file(const char* path)
 {	
 	std::ifstream fs(path);
@@ -204,7 +160,7 @@ int utils_str_is_number(const std::string& str)
 }
 
 
-int utils_parse_tsv_file_as_table(lua_State*L)
+int utils_parse_tsv_file(lua_State*L)
 {
 	const char* path = luaL_checkstring(L, 1);
 
@@ -245,9 +201,13 @@ int utils_parse_tsv_file_as_table(lua_State*L)
 		if (table_index == 0) {
 			table_index = 1;
 			col_names = utils::split_by_cuts(line, '\t');
+
 			int temp_i = 0;
 			for (auto& name : col_names) {
 				col_indices[name] = temp_i++;
+				if (read_cols.size() == 0) {
+					read_cols.push_back({ {"name",name} });
+				}
 			}
 			continue;
 		}
@@ -457,9 +417,6 @@ int res_parse_resid(lua_State* L) {
 void luaopen_tsv(lua_State* L)
 {
 	script_system_register_luac_function(L, utils_parse_tsv_file);
-	script_system_register_luac_function(L, utils_parse_tsv_file_as_table);
-
-	script_system_register_luac_function_with_name(L, "utils_parse_tsv",utils_parse_tsv_file_as_table);
 	
 	script_system_register_luac_function(L, utils_str_split);
 	script_system_register_luac_function(L, utils_file_open);
