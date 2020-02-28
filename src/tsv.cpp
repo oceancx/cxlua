@@ -1,6 +1,7 @@
 #include "tsv.h"
 #include <fstream>
 #include <sstream>
+#include "utils.h"
 using String = std::string;
 using std::string;
 using std::map;
@@ -426,6 +427,19 @@ int res_parse_resid(lua_State* L) {
 	return 1;
 }
 
+int util_gb2312_to_utf8(lua_State* L) {
+	const char* str = lua_tostring(L, 1);
+	std::string s = utils::GB2312ToUtf8(str);
+	lua_pushstring(L, s.c_str());
+	return 1;
+}
+
+int util_utf8_to_gb2312(lua_State* L) {
+	const char* str = lua_tostring(L, 1);
+	std::string s = utils::Utf8ToGB2312(str);
+	lua_pushstring(L, s.c_str());
+	return 1;
+}
 
 
 void luaopen_tsv(lua_State* L)
@@ -442,5 +456,9 @@ void luaopen_tsv(lua_State* L)
 	script_system_register_luac_function(L, res_decode);
 
 	script_system_register_luac_function(L, res_parse_resid);
+
+	script_system_register_luac_function(L, util_gb2312_to_utf8);
+	script_system_register_luac_function(L, util_utf8_to_gb2312);
+	
 }
 

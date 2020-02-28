@@ -128,6 +128,7 @@ int GMath::Astar_GetDir4(float degree)
 	{
 		return Direction::N_E;
 	}
+	assert(false);
 	std::cout << "Astar_GetDir4 error!!! degree:" << degree << std::endl;
 	return 0;
 }
