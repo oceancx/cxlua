@@ -91,7 +91,13 @@ static inline any lua_getanyvalue(lua_State*L, int i)
 			return (lua_Number)num;
 		}
 		else {
-			return (lua_Integer)inum;
+			lua_Integer n = (lua_Integer)num;
+			if (n > INT32_MAX) {
+				return (lua_Integer)n;
+			}
+			else {
+				return (int32_t)n;
+			}
 		}
 			
 	}
