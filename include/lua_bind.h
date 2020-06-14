@@ -24,7 +24,7 @@ void lua_push_pointer(lua_State* L, T* ptr) {
 
 
 
-bool check_lua_error(lua_State* L, int res, const char* func="");
+bool check_lua_error(lua_State* L, int res, const char* func = "");
 
 template <typename Ret, typename... Args>
 Ret callfunc(std::function<Ret(Args...)> func, std::vector<any> anyargs);
@@ -47,7 +47,7 @@ Ret callfunc(std::function<Ret(Arg0, Args...)> func, std::vector<any> anyargs)
 	std::function<Ret(Args... args)> lambda =
 		([=](Args... args) -> Ret {
 		return func(arg0, args...);
-	});
+			});
 	return callfunc(lambda, anyargs);
 }
 
@@ -57,7 +57,7 @@ std::function<any(std::vector<any>)> adaptfunc(Ret(*func)(Args...)) {
 	std::function<any(std::vector<any>)> result =
 		([=](std::vector<any> anyargs) -> any {
 		return any(callfunc(stdfunc, anyargs));
-	});
+			});
 	return result;
 }
 
@@ -68,11 +68,11 @@ std::function<any(std::vector<any>)> adaptfunc(void(*func)(Args...)) {
 		([=](std::vector<any> anyargs) -> any {
 		callfunc(stdfunc, anyargs);
 		return any();
-	});
+			});
 	return result;
 }
 
-static inline any lua_getanyvalue(lua_State*L, int i)
+static inline any lua_getanyvalue(lua_State* L, int i)
 {
 	switch (lua_type(L, i))
 	{
@@ -99,7 +99,7 @@ static inline any lua_getanyvalue(lua_State*L, int i)
 				return (int32_t)n;
 			}
 		}
-			
+
 	}
 	case LUA_TSTRING:
 		return lua_tostring(L, i);
@@ -159,7 +159,7 @@ void lua_pushargs(lua_State* L, Ts... args)
 }
 
 template<typename ...Ts, std::size_t...Is>
-void lua_pushhelper(lua_State* L, std::tuple<Ts...> const & t, std::index_sequence<Is...>)
+void lua_pushhelper(lua_State* L, std::tuple<Ts...> const& t, std::index_sequence<Is...>)
 {
 	using expander = int[];
 	(void)expander {
@@ -170,7 +170,7 @@ void lua_pushhelper(lua_State* L, std::tuple<Ts...> const & t, std::index_sequen
 
 
 template <typename FuncType>
-int cfunction_t(lua_State*L)
+int cfunction_t(lua_State* L)
 {
 	FuncType** af = (FuncType**)lua_touserdata(L, lua_upvalueindex(1));
 	int argn = lua_gettop(L);
@@ -191,7 +191,7 @@ int cfunction_t(lua_State*L)
 template<typename FuncType>
 void lua_register_c_function(lua_State* L, FuncType* func, const char* name)
 {
-	FuncType**ud = (FuncType**)lua_newuserdata(L, sizeof(FuncType*));
+	FuncType** ud = (FuncType**)lua_newuserdata(L, sizeof(FuncType*));
 	(*ud) = (FuncType*)func;
 	lua_pushcclosure(L, cfunction_t<FuncType>, 1);
 	lua_setglobal(L, name);
@@ -200,12 +200,16 @@ void lua_register_c_function(lua_State* L, FuncType* func, const char* name)
 #define lua_register_function(L,fn) lua_register_c_function<decltype(fn)>(L,fn,#fn)
 
 template <typename...Ts>
-std::vector<any> call_lua_function(lua_State*L, char const* func, Ts... args)
+std::vector<any> call_lua_function(lua_State* L, char const* func, Ts... args)
 {
 	int top = lua_gettop(L);
 	lua_getglobal(L, func);
-
-	if(sizeof...(Ts) != 0)
+	if (lua_isnil(L, -1)) {
+		std::vector<any> rets;
+		rets.push_back(true);
+		return rets;
+	}
+	if (sizeof...(Ts) != 0)
 		lua_pushargs(L, args...);
 	int res = lua_pcall(L, sizeof...(Ts), LUA_MULTRET, 0);
 	check_lua_error(L, res, func);
