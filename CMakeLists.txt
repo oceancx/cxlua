@@ -29,6 +29,7 @@ add_library(cxlua
     src/cxmath.cpp
     src/cxrandom.cpp
     src/tsv.cpp
+    src/xyq_support.cpp
 )
 
 if(MSVC)
