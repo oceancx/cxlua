@@ -31,16 +31,19 @@ int xyq_load_wdf(lua_State* L) {
 }
 
 int xyq_unload_wdf(lua_State* L) {
+	(void*)L;
 	return 0;
 }
 
 
 int xyq_load_map(lua_State* L) {
+	(void*)L;
 	return 0;
 }
 
 
 int xyq_unload_map(lua_State* L) {
+	(void*)L;
 	return 0;
 }
 luaL_Reg MT_XYQ[] = {
@@ -60,6 +63,7 @@ void lua_push_xyq_wdf(lua_State* L)
 		lua_setfield(L, -2, "__index");
 	}
 	lua_setmetatable(L, -2);*/
+	(void*)L;
 }
 
 
@@ -74,5 +78,5 @@ void lua_push_xyq_wdf(lua_State* L)
 
 void luaopen_xyq_support(lua_State* L)
 {
-
+	(void*)L;
 }
