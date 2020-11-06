@@ -8,34 +8,34 @@ float GMath::Astar_GetDistance(float sx, float sy, float ex, float ey)
 {
 	float dx = sx - ex;
 	float dy = sy - ey;
-	return sqrt(pow(dx,2) + pow(dy,2));
+	return sqrt(pow(dx, 2) + pow(dy, 2));
 }
 
 float GMath::Astar_GetDistanceSquare(float sx, float sy, float ex, float ey)
 {
-    float dx = sx - ex;
-    float dy = sy - ey;
-    return pow(dx,2) + pow(dy,2);
+	float dx = sx - ex;
+	float dy = sy - ey;
+	return pow(dx, 2) + pow(dy, 2);
 }
 
 int GMath::Astar_GetAngleUseBoxXY(int sx, int sy, int ex, int ey)
 {
-	
-	return (int)(Astar_GetAngle(sx*1.f,sy*1.f,ex*1.f,ey*1.f));  // not possible
+
+	return (int)(Astar_GetAngle(sx * 1.f, sy * 1.f, ex * 1.f, ey * 1.f));  // not possible
 }
 
 int GMath::Astar_GetDirUseInt(int degree) {
-  //右下，左下，左上，右上，下，左，上，右
-  // 0    1    2    3   4  5   6  7
-  //  2 3 0 1       6 7   4 5
-  //int innerDirs[8] = { 7,3,6,2,5,1,4,0 };
- 
-  return (int)Astar_GetDir(degree*1.f);
+	//右下，左下，左上，右上，下，左，上，右
+	// 0    1    2    3   4  5   6  7
+	//  2 3 0 1       6 7   4 5
+	//int innerDirs[8] = { 7,3,6,2,5,1,4,0 };
+
+	return (int)Astar_GetDir(degree * 1.f);
 }
 
 float GMath::Astar_GetAngle(float sx, float sy, float ex, float ey)
 {
-//	Logger::Print("Astar_GetAngle: sx=%lf sy=%lf ex=%lf ey=%lf\n", sx, sy, ex, ey);
+	//	Logger::Print("Astar_GetAngle: sx=%lf sy=%lf ex=%lf ey=%lf\n", sx, sy, ex, ey);
 
 	float dx = ex - sx;
 	float dy = ey - sy;
@@ -64,10 +64,10 @@ int GMath::Astar_GetDir(float degree) {
 	int innerDirs[8] = { 7,0,4,1,5,2,6,3 };
 	if (degree >= 0) //degree: 0 ~ 180
 	{
-		
+
 		float step = 45.f;
 		float init = -22.5f;
-		for (int i=0;i<5;i++)
+		for (int i = 0; i < 5; i++)
 		{
 			if (degree >= init && degree < init + step)
 			{
@@ -86,7 +86,7 @@ int GMath::Astar_GetDir(float degree) {
 		float init = -22.5f;
 		for (int i = 7; i >= 4; i--)
 		{
-			if (degree > init +step && degree <= init )
+			if (degree > init + step && degree <= init)
 			{
 				return innerDirs[i];
 			}
@@ -116,7 +116,7 @@ int GMath::Astar_GetDir4(float degree)
 	{
 		return Direction::S_E;
 	}
-	else if (degree >= 90.0f&&degree < 180.f)
+	else if (degree >= 90.0f && degree < 180.f)
 	{
 		return Direction::S_W;
 	}
@@ -124,7 +124,7 @@ int GMath::Astar_GetDir4(float degree)
 	{
 		return Direction::N_W;
 	}
-	else if(degree>-90.f&&degree < 0.f)
+	else if (degree > -90.f && degree < 0.f)
 	{
 		return Direction::N_E;
 	}
@@ -148,10 +148,10 @@ int GMath::GetReverseDir(int dir)
 	}
 	return dir;
 }
-int GMath::Clamp(int value,int min,int max)
+int GMath::Clamp(int value, int min, int max)
 {
-	if(value < min )value=min;
-	if(value>max)value=max;
+	if (value < min)value = min;
+	if (value > max)value = max;
 	return value;
 }
 
@@ -160,10 +160,10 @@ glm::vec3 GMath::CubicBezierCurve(glm::vec3 p1, glm::vec3 p2, float t)
 	glm::vec3 p0(0, 0, 0);
 	p0 = p0 * (std::powf(1.f - t, 3));
 	glm::vec3 bezier;
-	p1 = p1 * (3 * (t* std::powf(1.f - t, 2)));
-	p2 = p2 * (3 * std::powf(t, 2) *(1 - t));
+	p1 = p1 * (3 * (t * std::powf(1.f - t, 2)));
+	p2 = p2 * (3 * std::powf(t, 2) * (1 - t));
 	glm::vec3 p3(1.f, 1.f, 0);
-	p3 = p3 * (std::powf(t, 3)); 
+	p3 = p3 * (std::powf(t, 3));
 	bezier = p1 + p2 + p3;
 	return bezier;
 }
@@ -207,4 +207,3 @@ int GMath::NextDir4(int dir)
 //float pixs_per_inch = diagonal_pixs / diagonal;	 //95.78
 //float cm = 50 / pixs_per_cm;
 //float m = cm / 100.f;
-
