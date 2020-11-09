@@ -31,31 +31,19 @@ int xyq_load_wdf(lua_State* L) {
 }
 
 int xyq_unload_wdf(lua_State* L) {
-<<<<<<< HEAD
 	(void*)L;
-=======
-	(void)L;
->>>>>>> 09625ad... fix compile err
 	return 0;
 }
 
 
 int xyq_load_map(lua_State* L) {
-<<<<<<< HEAD
 	(void*)L;
-=======
-	(void)L;
->>>>>>> 09625ad... fix compile err
 	return 0;
 }
 
 
 int xyq_unload_map(lua_State* L) {
-<<<<<<< HEAD
 	(void*)L;
-=======
-	(void)L;
->>>>>>> 09625ad... fix compile err
 	return 0;
 }
 luaL_Reg MT_XYQ[] = {
