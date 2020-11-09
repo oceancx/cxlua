@@ -216,6 +216,17 @@ int buffer_readint(lua_State* L)
 	return 1;
 }
 
+
+int buffer_readint64(lua_State* L)
+{
+	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
+	int64_t v = buffer->ReadAsInt64();
+	lua_pushinteger(L, v);
+	return 1;
+}
+
+
+
 int buffer_peekint(lua_State* L)
 {
 	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
@@ -250,6 +261,7 @@ luaL_Reg mt_buffer_reg[] = {
 	
 	{ "ReadAsFloat",buffer_readfloat },
 	{ "ReadAsInt",buffer_readint },
+	{ "ReadAsInt64",buffer_readint64 },
 	{ "PeekAsInt",buffer_peekint},
 	{ "PeekAsFloat",buffer_peekfloat },
 	{ "PeekAsString",buffer_peekstring },
@@ -482,6 +494,7 @@ int ez_tcp_server_set_on_message(lua_State* L) {
 		});
 	return 0;
 }
+
 
 static luaL_Reg MT_EZ_TCP_SERVER[] = {
 	{ "Start",ez_tcp_server_start },
