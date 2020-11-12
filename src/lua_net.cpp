@@ -12,16 +12,16 @@ using namespace ezio;
 
 static const char* skey_mt_tcp_connection = "key_mt_tcp_connection";
 
-void lua_push_tcp_connection(lua_State*L, const TCPConnectionPtr& conn)
+void lua_push_tcp_connection(lua_State* L, const TCPConnectionPtr& conn)
 {
-	TCPConnection**  ptr = (TCPConnection**)lua_newuserdata(L, sizeof(TCPConnection*));
+	TCPConnection** ptr = (TCPConnection**)lua_newuserdata(L, sizeof(TCPConnection*));
 	*ptr = conn.get();
 	luaL_setmetatable(L, skey_mt_tcp_connection);
 }
 
-TCPConnection* lua_check_tcpconnection(lua_State* L,int index)
+TCPConnection* lua_check_tcpconnection(lua_State* L, int index)
 {
-	TCPConnection**  ptr = (TCPConnection**)lua_touserdata(L, index);
+	TCPConnection** ptr = (TCPConnection**)lua_touserdata(L, index);
 	return *ptr;
 }
 
@@ -59,19 +59,29 @@ int tcp_connection_Send(lua_State* L)
 }
 
 
+int tcp_connection_set_tcp_nodelay(lua_State* L)
+{
+	TCPConnection* conn = lua_check_tcpconnection(L, 1);
+	bool nodelay = lua_toboolean(L, 2);
+	conn->SetTCPNoDelay(nodelay);
+	return 0;
+}
+
+
 luaL_Reg mt_tcp_connection_reg[] = {
 	{ "tohostport",tcp_connection_to_host_port},
 	{ "connected",tcp_connection_connected},
 	{ "send",tcp_connection_send },
 	{ "Send",tcp_connection_Send },
+	{ "SetTCPNoDelay",tcp_connection_set_tcp_nodelay },
 	{ NULL, NULL }
 };
 
 
 static const char* skey_mt_buffer = "key_mt_buffer";
-using LuaEzioBuffer = Buffer * ;
+using LuaEzioBuffer = Buffer*;
 
-Buffer* lua_check_buffer(lua_State*L, int index)
+Buffer* lua_check_buffer(lua_State* L, int index)
 {
 	LuaEzioBuffer* buffer = (LuaEzioBuffer*)lua_touserdata(L, index);
 	return *buffer;
@@ -109,7 +119,7 @@ int buffer_prependint(lua_State* L)
 	Buffer* buffer = (Buffer*)lua_check_buffer(L, 1);
 	int n = (int)lua_tointeger(L, 2);
 	buffer->Prepend(n);
-	
+
 	return 0;
 }
 
@@ -258,7 +268,7 @@ luaL_Reg mt_buffer_reg[] = {
 	{ "WriteInt64",buffer_writeint64 },
 	{ "ReadAsString",buffer_readstring },
 	{ "ReadAllAsString",buffer_readallstring },
-	
+
 	{ "ReadAsFloat",buffer_readfloat },
 	{ "ReadAsInt",buffer_readint },
 	{ "ReadAsInt64",buffer_readint64 },
@@ -271,22 +281,28 @@ luaL_Reg mt_buffer_reg[] = {
 	{ NULL, NULL }
 };
 
-void lua_push_ezio_buffer(lua_State*L, Buffer& buf)
+void lua_push_ezio_buffer(lua_State* L, Buffer& buf)
 {
-	LuaEzioBuffer* ptr =(LuaEzioBuffer*)lua_newuserdata(L, sizeof(LuaEzioBuffer));
+	LuaEzioBuffer* ptr = (LuaEzioBuffer*)lua_newuserdata(L, sizeof(LuaEzioBuffer));
 	*ptr = &buf;
 	luaL_setmetatable(L, skey_mt_buffer);
 }
 
-int ezio_buffer_create(lua_State*L)
+int ezio_buffer_create(lua_State* L)
 {
 	LuaEzioBuffer* ptr = (LuaEzioBuffer*)lua_newuserdata(L, sizeof(LuaEzioBuffer));
 	*ptr = new Buffer();
 	luaL_setmetatable(L, skey_mt_buffer);
+
+	if (!lua_isnil(L, 1)) {
+		auto* buf = lua_check_buffer(L, 1);
+		int len = (int)lua_tointeger(L, 2);
+		(*ptr)->Write(buf->Peek(), len);
+	}
 	return 1;
 }
 
-int ezio_buffer_destroy(lua_State*L)
+int ezio_buffer_destroy(lua_State* L)
 {
 	Buffer* ptr = lua_check_buffer(L, 1);
 	delete ptr;
@@ -295,38 +311,38 @@ int ezio_buffer_destroy(lua_State*L)
 
 //EventLoop
 
-void ez_task_callback(){
-		
+void ez_task_callback() {
+
 }
 void lua_push_ez_event_loop(lua_State* L, EventLoop* loop);
 
-int ez_event_loop_run(lua_State*L) {
+int ez_event_loop_run(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	loop->Run();
 	return 0;
 };
-int ez_event_loop_quit(lua_State*L) {
+int ez_event_loop_quit(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	loop->Quit();
 	return 0;
 };
 
-int ez_event_loop_queue_task(lua_State*L) {
+int ez_event_loop_queue_task(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	loop->QueueTask([L,ref]() {
-		if(L){
+	loop->QueueTask([L, ref]() {
+		if (L) {
 			lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
 			int res = lua_pcall(L, 0, 0, 0);
 			check_lua_error(L, res);
 			luaL_unref(L, LUA_REGISTRYINDEX, ref);
 		}
-	});
+		});
 	return 0;
 };
 
-int ez_event_loop_run_task(lua_State*L) {
+int ez_event_loop_run_task(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	//lua_pushvalue(L, 2);
 	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -337,10 +353,10 @@ int ez_event_loop_run_task(lua_State*L) {
 			check_lua_error(L, res);
 			luaL_unref(L, LUA_REGISTRYINDEX, ref);
 		}});
-	return 0; 
+	return 0;
 };
 
-int ez_event_loop_run_task_at(lua_State*L) { 
+int ez_event_loop_run_task_at(lua_State* L) {
 	L = L;
 	/*auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	lua_pushvalue(L, 2);
@@ -357,7 +373,7 @@ int ez_event_loop_run_task_at(lua_State*L) {
 		*/
 	return 0;
 };
-int ez_event_loop_run_task_after(lua_State*L) { 
+int ez_event_loop_run_task_after(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	lua_pushvalue(L, 2);
 	int delay = (int)lua_tointeger(L, 3);
@@ -371,10 +387,10 @@ int ez_event_loop_run_task_after(lua_State*L) {
 		}
 		}, TimeDuration(delay));
 
-	return 0; 
+	return 0;
 };
 
-int ez_event_loop_run_task_every(lua_State*L) {
+int ez_event_loop_run_task_every(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	lua_pushvalue(L, 2);
 	int ms = (int)lua_tointeger(L, 3);
@@ -385,26 +401,26 @@ int ez_event_loop_run_task_every(lua_State*L) {
 			int res = lua_pcall(L, 0, 0, 0);
 			check_lua_error(L, res);
 		}
-	},TimeDuration(ms));
+		}, TimeDuration(ms));
 	return 0;
 };
-int ez_event_loop_run_task_cancel_timed_task(lua_State*L) {
+int ez_event_loop_run_task_cancel_timed_task(lua_State* L) {
 	L = L;
-	return 0; 
+	return 0;
 };
-int ez_event_loop_belongs_to_current_thread(lua_State*L) { 
+int ez_event_loop_belongs_to_current_thread(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	auto ret = loop->BelongsToCurrentThread();
 	lua_pushboolean(L, ret);
-	return 1; 
+	return 1;
 };
-int ez_event_loop_register_notifier(lua_State*L) { L = L; return 0; };
-int ez_event_loop_unregister_notifier(lua_State*L) { L = L; return 0; };
+int ez_event_loop_register_notifier(lua_State* L) { L = L; return 0; };
+int ez_event_loop_unregister_notifier(lua_State* L) { L = L; return 0; };
 
-int ez_event_loop_wakeup(lua_State*L) {
+int ez_event_loop_wakeup(lua_State* L) {
 	auto* loop = lua_check_pointer<EventLoop>(L, 1);
 	loop->Wakeup();
-	return 0; 
+	return 0;
 };
 
 luaL_Reg MT_EZ_EVENT_LOOP[] = {
@@ -434,7 +450,7 @@ void lua_push_ez_event_loop(lua_State* L, EventLoop* loop)
 	lua_setmetatable(L, -2);
 }
 
-int ez_event_loop_create(lua_State*L)
+int ez_event_loop_create(lua_State* L)
 {
 	lua_push_ez_event_loop(L, new EventLoop());
 	return 1;
@@ -526,13 +542,13 @@ int ez_tcp_server_destroy(lua_State* L) {
 	delete sp;
 	return 0;
 }
- 
+
 //Client 
 
 int ez_tcp_client_is_connected(lua_State* L) {
 	auto* tcpclient = lua_check_pointer<TCPClient>(L, 1);
 	auto conn = tcpclient->connection();
-	lua_pushboolean(L, conn &&conn->connected());
+	lua_pushboolean(L, conn && conn->connected());
 	return 1;
 }
 
@@ -647,7 +663,7 @@ int ez_tcp_client_destroy(lua_State* L) {
 	return 0;
 }
 
-int newthread_dofile(lua_State* L){
+int newthread_dofile(lua_State* L) {
 	const char* path = lua_tostring(L, 1);
 	new std::thread([path]() {
 		lua_State* _L = luaL_newstate();
@@ -656,7 +672,7 @@ int newthread_dofile(lua_State* L){
 		int res = luaL_dofile(_L, path);
 		check_lua_error(_L, res);
 		lua_close(_L);
-	});
+		});
 	return 0;
 }
 
@@ -673,7 +689,7 @@ int newthread_dostring(lua_State* L) {
 	return 0;
 }
 
-void io_service_context_init(){
+void io_service_context_init() {
 	ezio::IOServiceContext::Init();
 }
 
@@ -686,8 +702,8 @@ void at_exit_manager_init() {
 void luaopen_netlib(lua_State* L)
 {
 	if (luaL_newmetatable(L, skey_mt_tcp_connection)) {
-		luaL_setfuncs(L,mt_tcp_connection_reg, 0);
-		lua_setfield(L, -1, "__index");	
+		luaL_setfuncs(L, mt_tcp_connection_reg, 0);
+		lua_setfield(L, -1, "__index");
 	}
 	else {
 		std::cout << "associate mt_tcp_connection error!" << std::endl;
@@ -695,7 +711,7 @@ void luaopen_netlib(lua_State* L)
 
 	if (luaL_newmetatable(L, skey_mt_buffer)) {
 		luaL_setfuncs(L, mt_buffer_reg, 0);
-		lua_setfield(L, -1, "__index");	
+		lua_setfield(L, -1, "__index");
 	}
 	else {
 		std::cout << "associate mt_buffer error!" << std::endl;
