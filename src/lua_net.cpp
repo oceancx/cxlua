@@ -165,7 +165,18 @@ int buffer_writeint64(lua_State* L)
 	uint64_t n = (uint64_t)lua_tointeger(L, 2);
 	buffer->Write(n);
 	return 0;
+}	
+
+int buffer_writebuffer(lua_State* L)
+{
+	Buffer* buf = (Buffer*)lua_check_buffer(L, 1);
+	Buffer* src = (Buffer*)lua_check_buffer(L, 2);
+	int len = (int)lua_tointeger(L, 3);
+	buf->Write(src->Peek(), len);
+	return 0;
 }
+
+
 
 
 int buffer_writefloat(lua_State* L)
@@ -266,6 +277,7 @@ luaL_Reg mt_buffer_reg[] = {
 	{ "WriteInt",buffer_writeint },
 	{ "WriteByte",buffer_writebyte },
 	{ "WriteInt64",buffer_writeint64 },
+	{ "WriteBuffer",buffer_writebuffer},
 	{ "ReadAsString",buffer_readstring },
 	{ "ReadAllAsString",buffer_readallstring },
 
