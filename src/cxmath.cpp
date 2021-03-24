@@ -8,14 +8,14 @@ float GMath::Astar_GetDistance(float sx, float sy, float ex, float ey)
 {
 	float dx = sx - ex;
 	float dy = sy - ey;
-	return sqrt(pow(dx, 2) + pow(dy, 2));
+	return sqrtf(powf(dx, 2) + powf(dy, 2));
 }
 
 float GMath::Astar_GetDistanceSquare(float sx, float sy, float ex, float ey)
 {
 	float dx = sx - ex;
 	float dy = sy - ey;
-	return pow(dx, 2) + pow(dy, 2);
+	return powf(dx, 2) + powf(dy, 2);
 }
 
 int GMath::Astar_GetAngleUseBoxXY(int sx, int sy, int ex, int ey)
