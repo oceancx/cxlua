@@ -165,7 +165,7 @@ int buffer_writeint64(lua_State* L)
 	uint64_t n = (uint64_t)lua_tointeger(L, 2);
 	buffer->Write(n);
 	return 0;
-}	
+}
 
 int buffer_writebuffer(lua_State* L)
 {
@@ -709,6 +709,15 @@ void at_exit_manager_init() {
 	new kbase::AtExitManager();
 }
 
+int at_exit_manager_regcb(lua_State* L) {
+	int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+	kbase::AtExitManager::RegisterCallback([&L,&ref] {
+		lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+		int res = lua_pcall(L, 1, 0, 0);
+		check_lua_error(L, res);
+		});
+	return 0;
+}
 
 #define register_luac_function(L, fn) (lua_pushcfunction(L, (fn)), lua_setglobal(L, #fn))
 void luaopen_netlib(lua_State* L)
@@ -755,4 +764,6 @@ void luaopen_netlib(lua_State* L)
 	register_luac_function(L, newthread_dostring);
 	script_system_register_function(L, io_service_context_init);
 	script_system_register_function(L, at_exit_manager_init);
+	register_luac_function(L, at_exit_manager_regcb);
+
 }
