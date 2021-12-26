@@ -8,16 +8,16 @@ void NetThreadQueue::PushBack(int q,const char* data, size_t len)
 	assert(checkq(q));
 	m_Locks[q].lock();
 	m_Queues[q].emplace_back(len);
-	ezio::Buffer& it = m_Queues[q].back();
+	cxezio::Buffer& it = m_Queues[q].back();
 	it.Write(data, len);
 	m_Locks[q].unlock();
 }
 
-ezio::Buffer& NetThreadQueue::Front(int q)
+cxezio::Buffer& NetThreadQueue::Front(int q)
 {
 	assert(checkq(q));
 	m_Locks[q].lock();
-	ezio::Buffer& f = m_Queues[q].front();
+	cxezio::Buffer& f = m_Queues[q].front();
 	m_Locks[q].unlock();
 	return f;
 }
@@ -67,7 +67,7 @@ int net_thread_queue_push_back(lua_State* L)
 {
 	auto* ptr = lua_check_net_thread_queue(L, 1);
 	int q = (int)lua_tointeger(L, 2);
-	ezio::Buffer* buffer = (ezio::Buffer*)lua_check_buffer(L, 3);
+	cxezio::Buffer* buffer = (cxezio::Buffer*)lua_check_cxezio_buffer(L, 3);
 	size_t len = (size_t)lua_tointeger(L, 4);
 	ptr->PushBack(q, buffer->Peek(), len);
 	return 0;
@@ -87,7 +87,7 @@ int net_thread_queue_front(lua_State* L)
 	auto* ptr = lua_check_net_thread_queue(L, 1);
 	int q = (int)lua_tointeger(L, 2);
 	auto& buf = ptr->Front(q);
-	lua_push_ezio_buffer(L, buf);
+	lua_push_cxezio_buffer(L, buf);
 	return 1;
 }
 

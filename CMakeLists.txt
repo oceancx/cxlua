@@ -6,12 +6,10 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 find_package(LuaCJson)
-find_package(EZIO)
 find_package(NESupport)
 find_package(Nlohmann)
 find_package(glm)
 find_package(asio)
-find_package(kcp) 
 
 file(GLOB_RECURSE  SOURCES_CPP "src/*.cpp")
 file(GLOB_RECURSE  SOURCES_HEADER_RPI "src/*.h" )
@@ -32,6 +30,7 @@ add_library(cxlua
     src/cxrandom.cpp
     src/tsv.cpp
     src/xyq_support.cpp
+    src/cxezio/buffer.cpp
 )
 
 if(MSVC)
@@ -55,13 +54,11 @@ target_compile_features(cxlua PUBLIC cxx_std_11)
 
 target_link_libraries(cxlua 
   PUBLIC 
-    EZIO::EZIO 
     LuaCJson::LuaCJson
     Nlohmann 
     NESupport::NESupport 
     glm
     asio
-    kcp
 )
 
 include(cmake/HelperMacroFunction.cmake)

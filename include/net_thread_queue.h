@@ -3,7 +3,7 @@
 #include <string>
 #include <mutex>
 #include <deque>
-#include "ezio/buffer.h"
+#include "cxezio/buffer.h"
 class NetThreadQueue
 {
 public:
@@ -16,7 +16,7 @@ public:
 	NetThreadQueue() = default;
 	~NetThreadQueue() = default;
 	void PushBack(int q, const char* data, size_t len);
-	ezio::Buffer& Front(int q);
+	cxezio::Buffer& Front(int q);
 	void PopFront(int q);
 	int Size(int q);
 	bool Empty(int q);
@@ -25,7 +25,7 @@ public:
 private:
 	bool checkq(int q) { return q >= Read && q <= Write; }
 	std::mutex m_Locks[2];
-	std::deque<ezio::Buffer> m_Queues[2];
+	std::deque<cxezio::Buffer> m_Queues[2];
 };
 
 void lua_push_net_thread_queue(lua_State*L,NetThreadQueue* q);
