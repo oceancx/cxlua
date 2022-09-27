@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 #include <deque>
+#include <lua.hpp>
 using Vec3 = glm::vec3;
 using Vec4 = glm::vec4;
 using Vec2 = glm::vec2;
