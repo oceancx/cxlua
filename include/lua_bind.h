@@ -207,6 +207,7 @@ std::vector<any> call_lua_function(lua_State* L, char const* func, Ts... args)
 	if (lua_isnil(L, -1)) {
 		std::vector<any> rets;
 		rets.push_back(true);
+		lua_settop(L, top);
 		return rets;
 	}
 	if (sizeof...(Ts) != 0)
@@ -220,6 +221,7 @@ std::vector<any> call_lua_function(lua_State* L, char const* func, Ts... args)
 	{
 		rets.push_back(lua_getanyvalue(L, top + i));
 	}
+	lua_settop(L, top);
 	return rets;
 }
 
